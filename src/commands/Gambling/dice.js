@@ -1,13 +1,30 @@
-// ===== DonutSMP Dice Gambling (Universal JS Version) =====
+// ===== DonutSMP Dice Gambling (Persistent JSON Version) =====
 
-// ====== ECONOMY (TEMP - MEMORY) ======
-const users = new Map();
+const fs = require('fs');
+const path = require('path');
 
+// ===== FILE PATH =====
+const DATA_FILE = path.join(__dirname, '../../../data/economy.json');
+
+// ===== LOAD DATA =====
+let users = {};
+
+if (fs.existsSync(DATA_FILE)) {
+    users = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+}
+
+// ===== SAVE FUNCTION =====
+function saveData() {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(users, null, 2));
+}
+
+// ===== ECONOMY =====
 function getUser(userId) {
-    if (!users.has(userId)) {
-        users.set(userId, { balance: 1000000 });
+    if (!users[userId]) {
+        users[userId] = { balance: 1000000 };
+        saveData();
     }
-    return users.get(userId);
+    return users[userId];
 }
 
 function getBalance(userId) {
@@ -16,10 +33,13 @@ function getBalance(userId) {
 
 function addBalance(userId, amount) {
     getUser(userId).balance += amount;
+    saveData();
 }
 
 function removeBalance(userId, amount) {
     getUser(userId).balance -= amount;
+    if (users[userId].balance < 0) users[userId].balance = 0;
+    saveData();
 }
 
 // ===== SETTINGS =====
@@ -31,7 +51,6 @@ module.exports = {
 
     name: "dice",
 
-    // ===== RUN COMMAND =====
     async run(ctx) {
         const userId = ctx.user.id;
         const bet = Number(ctx.options.amount);
@@ -70,7 +89,6 @@ module.exports = {
         });
     },
 
-    // ===== BUTTON HANDLER =====
     async handleButton(ctx) {
         const id = ctx.customId;
         const userId = ctx.user.id;
@@ -84,7 +102,7 @@ module.exports = {
                 return ctx.reply("❌ This isn't your bet!");
             }
 
-            const win = Math.random() < 0.4; // 40% win (house 60%)
+            const win = Math.random() < 0.4; // 40% win
 
             if (win) {
                 addBalance(userId, bet);
