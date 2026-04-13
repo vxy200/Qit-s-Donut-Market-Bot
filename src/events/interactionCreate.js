@@ -278,3 +278,14 @@ export default {
     });
   }
 };
+
+const dice = require('../commands/gamble/dice.js');
+
+if (interaction.isButton?.() || interaction.customId) {
+    dice.handleButton({
+        user: interaction.user,
+        customId: interaction.customId || interaction.custom_id,
+        reply: interaction.reply.bind(interaction),
+        update: interaction.update.bind(interaction)
+    });
+}
